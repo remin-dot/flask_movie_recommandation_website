@@ -1,0 +1,203 @@
+{% extends "admin/dashboard.html" %}
+
+{% block admin_content %}
+<div class="admin-panel">
+    <h2>ซิงค์ข้อมูลหนังกับโปสเตอร์</h2>
+    <p class="subtitle">ตรวจสอบและอัพเดตชื่อหนัง รายละเอียด และข้อมูลอื่นๆ เพื่อให้ตรงกับข้อมูล TMDB ของโปสเตอร์</p>
+    
+    <div class="sync-info-box">
+        <h3>วิธีการทำงาน:</h3>
+        <ul>
+            <li>ระบบจะค้นหาหนังทั้งหมดที่มี TMDB ID หรือโปสเตอร์จริง</li>
+            <li>ดึงข้อมูลเต็มรูปแบบจาก TMDB (ชื่อ, รายละเอียด, ปี, ปีที่ออกฉาย)</li>
+            <li>อัพเดตข้อมูลหนังให้ตรงกับแหล่งข้อมูลอย่างเป็นทางการ</li>
+            <li>ซิงค์ประเภทหนังจากข้อมูล TMDB</li>
+        </ul>
+    </div>
+    
+    <div class="sync-action-box">
+        <div class="warning-box">
+            ⚠️ <strong>คำเตือน:</strong> การซิงค์อาจใช้เวลาสักครู่โปรดอย่ากลับไปหรือปิดหน้านี้จนกว่าซิงค์จะเสร็จสิ้น
+        </div>
+        
+        <button id="sync-btn" class="btn btn-primary btn-lg" style="margin-top: 20px;">
+            <span class="spinner" id="spinner" style="display:none;">⏳ </span>
+            เริ่มซิงค์ข้อมูล
+        </button>
+        
+        <div id="sync-result" class="sync-result" style="display:none; margin-top: 30px;">
+            <h3>ผลการซิงค์:</h3>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <span class="stat-label">รวมทั้งสิ้น:</span>
+                    <span class="stat-value" id="total-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">✓ อัพเดต:</span>
+                    <span class="stat-value updated" id="updated-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">→ ไม่มีการเปลี่ยนแปลง:</span>
+                    <span class="stat-value unchanged" id="unchanged-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">✗ ล้มเหลว:</span>
+                    <span class="stat-value failed" id="failed-count">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.sync-info-box {
+    background-color: #f0f8ff;
+    border: 1px solid #b0d4ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.sync-info-box h3 {
+    margin-top: 0;
+}
+
+.sync-info-box ul {
+    margin-bottom: 0;
+}
+
+.sync-info-box li {
+    margin-bottom: 8px;
+}
+
+.warning-box {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 15px;
+    color: #856404;
+    font-weight: 500;
+}
+
+.sync-action-box {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+}
+
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 8px;
+}
+
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.sync-result {
+    background-color: #f8fff8;
+    border: 1px solid #90ee90;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.sync-result h3 {
+    margin-top: 0;
+    color: #2d5a2d;
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-value.updated {
+    color: #28a745;
+}
+
+.stat-value.unchanged {
+    color: #6c757d;
+}
+
+.stat-value.failed {
+    color: #dc3545;
+}
+</style>
+
+<script>
+document.getElementById('sync-btn').addEventListener('click', async function() {
+    const button = this;
+    const spinner = document.getElementById('spinner');
+    const result = document.getElementById('sync-result');
+    
+    button.disabled = true;
+    spinner.style.display = 'inline';
+    result.style.display = 'none';
+    
+    try {
+        const response = await fetch('{{ url_for("admin.sync_movie_details") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const res = data.result;
+            document.getElementById('total-count').textContent = res.total;
+            document.getElementById('updated-count').textContent = res.updated;
+            document.getElementById('unchanged-count').textContent = res.unchanged;
+            document.getElementById('failed-count').textContent = res.failed;
+            
+            result.style.display = 'block';
+            
+            // Show success message
+            const stats = `อัพเดต ${res.updated} หนัง, ${res.unchanged} หนังไม่มีการเปลี่ยนแปลง, ${res.failed} หนังล้มเหลว`;
+            alert('✓ ซิงค์ข้อมูลสำเร็จ!\n\n' + stats);
+        } else {
+            alert('✗ เกิดข้อผิดพลาด: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('✗ เกิดข้อผิดพลาด: ' + error.message);
+    } finally {
+        button.disabled = false;
+        spinner.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
