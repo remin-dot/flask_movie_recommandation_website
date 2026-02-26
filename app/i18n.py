@@ -201,7 +201,34 @@ TRANSLATIONS = {
     'admin.genre_added': {'en': 'Genre "{name}" added successfully.', 'th': 'เพิ่มประเภท "{name}" สำเร็จ', 'ja': 'ジャンル「{name}」を追加しました。', 'zh': '类型“{name}”添加成功。', 'es': 'Género "{name}" añadido correctamente.'},
     'admin.genre_add_error': {'en': 'Error adding genre.', 'th': 'เกิดข้อผิดพลาดในการเพิ่มประเภท', 'ja': 'ジャンル追加中にエラーが発生しました。', 'zh': '添加类型时出错。', 'es': 'Error al añadir el género.'},
     'admin.genre_deleted': {'en': 'Genre "{name}" deleted successfully.', 'th': 'ลบประเภท "{name}" สำเร็จ', 'ja': 'ジャンル「{name}」を削除しました。', 'zh': '类型“{name}”删除成功。', 'es': 'Género "{name}" eliminado correctamente.'},
-    'admin.genre_delete_error': {'en': 'Error deleting genre.', 'th': 'เกิดข้อผิดพลาดในการลบประเภท', 'ja': 'ジャンル削除中にエラーが発生しました。', 'zh': '删除类型时出错。', 'es': 'Error al eliminar el género.'},
+    'admin.genre_delete_error': {'en': 'Error deleting genre.', 'th': 'เกิดข้อผิดพลาดในการลบประเภท', 'ja': 'ジャンル削除中にエラーが発生しました。', 'zh': '删除类型时出错。', 'es': 'Error al eliminar el género.'},    'admin.sync_complete': {
+        'en': 'Sync complete! Total: {total}, Updated: {updated}, Unchanged: {unchanged}, Failed: {failed}',
+        'th': 'ซิงค์เสร็จสิ้น! รวมทั้งสิ้น: {total}, อัพเดต: {updated}, ไม่มีการเปลี่ยนแปลง: {unchanged}, ล้มเหลว: {failed}',
+        'ja': '同期完了! 合計: {total}、更新: {updated}、変更なし: {unchanged}、失敗: {failed}',
+        'zh': '同步完成！总计: {total}，已更新: {updated}，无变化: {unchanged}，失败: {failed}',
+        'es': '¡Sincronización completada! Total: {total}, Actualizadas: {updated}, Sin cambios: {unchanged}, Fallidas: {failed}'
+    },
+    'admin.sync_error': {
+        'en': 'Sync error: {error}',
+        'th': 'ข้อผิดพลาดในการซิงค์: {error}',
+        'ja': '同期エラー: {error}',
+        'zh': '同步错误: {error}',
+        'es': 'Error de sincronización: {error}'
+    },
+    'admin.placeholder_removed': {
+        'en': 'Removed {removed} movies with placeholder posters. Deleted {ratings} ratings and {watchlist} watchlist items.',
+        'th': 'ลบ {removed} หนังที่มีโปสเตอร์ชั่วคราว ลบคะแนน {ratings} รายการ และรายการอยากดู {watchlist} รายการ',
+        'ja': 'プレースホルダーポスター付き{removed}件の映画を削除しました。{ratings}件の評価と{watchlist}件のウォッチリスト項目を削除しました。',
+        'zh': '删除了{removed}部使用临时海报的电影。删除了{ratings}条评分和{watchlist}个收藏清单项目。',
+        'es': 'Se eliminaron {removed} películas con carteles temporales. Se eliminaron {ratings} valoraciones y {watchlist} elementos de la lista.'
+    },
+    'admin.placeholder_error': {
+        'en': 'Error removing placeholder movies: {error}',
+        'th': 'ข้อผิดพลาดในการลบหนังที่มีโปสเตอร์ชั่วคราว: {error}',
+        'ja': 'プレースホルダーポスター付き映画の削除エラー: {error}',
+        'zh': '删除临时海报电影出错: {error}',
+        'es': 'Error al eliminar películas con carteles temporales: {error}'
+    },
 }
 
 
