@@ -3,13 +3,15 @@ Flask application factory and initialization
 Sets up database, login manager, blueprints, and error handlers
 """
 
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import get_config
 from app.models import db, User
 from app.i18n import SUPPORTED_LANGUAGES, get_current_language, localize_text, translate
 from app.services.posters import ensure_movie_schema, sync_movie_posters, remove_duplicate_movies
+from app.utils import setup_logging
+import logging
 
 
 def create_app(config_name='development'):
@@ -30,6 +32,11 @@ def create_app(config_name='development'):
     # Load configuration
     config = get_config(config_name)
     app.config.from_object(config)
+    
+    # Setup logging
+    setup_logging(app)
+    logger = logging.getLogger(__name__)
+    logger.info(f"Creating Flask app in {config_name} environment")
     
     # Initialize extensions
     db.init_app(app)
@@ -61,20 +68,44 @@ def create_app(config_name='development'):
     app.register_blueprint(locale_bp)
     
     # Register error handlers
-    @app.errorhandler(404)
-    def not_found_error(error):
-        """Handle 404 - Page not found"""
-        return render_template('errors/404.html'), 404
+    @app.errorhandler(400)
+    def bad_request_error(error):
+        """Handle 400 - Bad request"""
+        app.logger.warning(f"Bad request: {error}")
+        return render_template('errors/400.html'), 400
     
     @app.errorhandler(403)
     def forbidden_error(error):
         """Handle 403 - Forbidden access"""
+        app.logger.warning(f"Forbidden access: {error}")
         return render_template('errors/403.html'), 403
+    
+    @app.errorhandler(404)
+    def not_found_error(error):
+        """Handle 404 - Page not found"""
+        app.logger.warning(f"Page not found: {error}")
+        return render_template('errors/404.html'), 404
     
     @app.errorhandler(500)
     def internal_error(error):
         """Handle 500 - Internal server error"""
+        app.logger.error(f"Internal server error: {error}", exc_info=True)
         db.session.rollback()
+        return render_template('errors/500.html'), 500
+    
+    @app.errorhandler(Exception)
+    def handle_exception(error):
+        """Handle unexpected exceptions"""
+        app.logger.error(f"Unhandled exception: {error}", exc_info=True)
+        db.session.rollback()
+        
+        # Return JSON for API requests
+        if app.request.content_type and 'application/json' in app.request.content_type:
+            return jsonify({
+                'error': 'An unexpected error occurred',
+                'status': 500
+            }), 500
+        
         return render_template('errors/500.html'), 500
     
     # Register context processor
