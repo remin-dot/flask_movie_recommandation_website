@@ -10,7 +10,13 @@ import click
 from dotenv import load_dotenv
 from app import create_app, db
 from app.models import User, Movie, Rating, Watchlist, Genre
-from app.services.posters import get_poster_for_movie, sync_movie_posters, remove_duplicate_movies
+from app.services.posters import (
+    get_poster_for_movie, 
+    sync_movie_posters, 
+    remove_duplicate_movies,
+    fetch_missing_posters,
+    update_all_movie_posters
+)
 
 
 # Load environment variables from .env file
@@ -287,6 +293,43 @@ def sync_posters_command():
     print(f"Removed duplicate movies: {removed}")
     print(f"Poster updates: {result.get('changed', 0)}")
     print(f"Duplicate poster fixes: {result.get('duplicate_fixes', 0)}")
+
+
+@app.cli.command('fetch_posters')
+def fetch_posters_command():
+    """Fetch missing posters from TMDB API for all movies without posters."""
+    print("Fetching missing posters from TMDB API...")
+    
+    if not app.config.get('TMDB_API_KEY'):
+        print("⚠️  Warning: TMDB_API_KEY not configured in .env")
+        print("Set TMDB_API_KEY to enable TMDB poster fetching")
+        print("Get your key at: https://www.themoviedb.org/settings/api")
+    
+    result = fetch_missing_posters()
+    print(f"✓ Total movies processed: {result['total']}")
+    print(f"✓ Posters fetched from TMDB: {result['fetched']}")
+    print(f"✓ Placeholder posters created: {result['failed']}")
+
+
+@app.cli.command('update_posters')
+@click.option('--force', is_flag=True, help='Force re-fetch all posters including existing ones')
+def update_posters_command(force):
+    """Update all movie posters from TMDB API."""
+    if force:
+        print("Force-updating all movie posters...")
+    else:
+        print("Updating missing movie posters...")
+    
+    if not app.config.get('TMDB_API_KEY'):
+        print("⚠️  Warning: TMDB_API_KEY not configured in .env")
+        print("Set TMDB_API_KEY to enable TMDB poster fetching")
+        print("Get your key at: https://www.themoviedb.org/settings/api")
+    
+    result = update_all_movie_posters(force=force)
+    print(f"✓ Total movies processed: {result['total']}")
+    print(f"✓ Posters updated: {result['updated']}")
+    print(f"✓ Posters unchanged: {result['kept']}")
+
 
 
 @app.cli.command()

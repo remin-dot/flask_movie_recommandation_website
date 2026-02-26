@@ -6,9 +6,12 @@ Ensures each movie has a poster URL and fixes duplicate poster URLs.
 import os
 import re
 import requests
+import logging
 from urllib.parse import quote_plus, quote_plus as url_quote_plus
 from sqlalchemy import inspect, text
 from app.models import db, Movie, Rating, Watchlist
+
+logger = logging.getLogger(__name__)
 
 
 KNOWN_POSTERS = {
@@ -248,3 +251,212 @@ def remove_duplicate_movies():
         db.session.commit()
 
     return removed_count
+
+def fetch_tmdb_poster_by_id(tmdb_id):
+    """
+    Fetch poster directly from TMDB API using tmdb_id
+    
+    Args:
+        tmdb_id: TMDB movie ID
+    
+    Returns:
+        Poster URL or None if not found
+    """
+    try:
+        from flask import current_app
+        api_key = current_app.config.get('TMDB_API_KEY', '').strip()
+        
+        if not api_key or not tmdb_id:
+            return None
+        
+        url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
+        params = {
+            'api_key': api_key,
+            'language': 'en-US'
+        }
+        
+        response = requests.get(url, params=params, timeout=5)
+        response.raise_for_status()
+        
+        data = response.json()
+        poster_path = data.get('poster_path')
+        
+        if poster_path:
+            return f"https://image.tmdb.org/t/p/w500{poster_path}"
+        
+        return None
+    
+    except Exception as e:
+        logger.warning(f"Failed to fetch TMDB poster for tmdb_id {tmdb_id}: {str(e)}")
+        return None
+
+
+def search_tmdb_posters_by_title(title, year=None, api_key=None):
+    """
+    Search TMDB for a movie and fetch its poster
+    
+    Args:
+        title: Movie title
+        year: Release year (optional, improves accuracy)
+        api_key: TMDB API key (uses config if not provided)
+    
+    Returns:
+        Tuple (tmdb_id, poster_url) or (None, None) if not found
+    """
+    try:
+        if not api_key:
+            from flask import current_app
+            api_key = current_app.config.get('TMDB_API_KEY', '').strip()
+        
+        if not api_key:
+            return None, None
+        
+        # Search for movie
+        search_url = "https://api.themoviedb.org/3/search/movie"
+        search_params = {
+            'api_key': api_key,
+            'query': title,
+            'language': 'en-US',
+            'include_adult': False
+        }
+        
+        if year:
+            search_params['year'] = year
+        
+        search_response = requests.get(search_url, params=search_params, timeout=5)
+        search_response.raise_for_status()
+        
+        results = search_response.json().get('results', [])
+        
+        if not results:
+            logger.debug(f"No TMDB results for: {title}")
+            return None, None
+        
+        # Get first result
+        movie = results[0]
+        tmdb_id = movie.get('id')
+        poster_path = movie.get('poster_path')
+        
+        if poster_path:
+            poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
+            return tmdb_id, poster_url
+        
+        return tmdb_id, None
+    
+    except Exception as e:
+        logger.warning(f"Failed to search TMDB for '{title}': {str(e)}")
+        return None, None
+
+
+def fetch_missing_posters():
+    """
+    Fetch posters from TMDB API for all movies without posters
+    
+    Returns:
+        Dictionary with statistics about posters fetched
+    """
+    movies = Movie.query.filter(
+        db.or_(Movie.poster_url == None, Movie.poster_url == '')
+    ).all()
+    
+    fetched = 0
+    failed = 0
+    
+    logger.info(f"Fetching posters for {len(movies)} movies without posters")
+    
+    for movie in movies:
+        poster_url = None
+        
+        # Try to fetch from TMDB using tmdb_id if available
+        if movie.tmdb_id:
+            poster_url = fetch_tmdb_poster_by_id(movie.tmdb_id)
+        
+        # If still no poster, search by title
+        if not poster_url:
+            tmdb_id, poster_url = search_tmdb_posters_by_title(movie.title, movie.year)
+            
+            # Update tmdb_id if we found one
+            if tmdb_id and not movie.tmdb_id:
+                movie.tmdb_id = tmdb_id
+        
+        # Use placeholder if still no poster
+        if not poster_url:
+            poster_url = build_unique_placeholder(movie.title, movie.year)
+            failed += 1
+        else:
+            fetched += 1
+        
+        movie.poster_url = poster_url
+    
+    if movies:
+        db.session.commit()
+    
+    logger.info(f"Poster fetch complete: {fetched} from TMDB, {failed} placeholders")
+    
+    return {
+        'total': len(movies),
+        'fetched': fetched,
+        'failed': failed
+    }
+
+
+def update_all_movie_posters(force=False):
+    """
+    Update all movie posters, optionally forcing refresh
+    
+    Args:
+        force: If True, re-fetch even existing posters
+    
+    Returns:
+        Dictionary with update statistics
+    """
+    if force:
+        movies = Movie.query.all()
+    else:
+        movies = Movie.query.filter(
+            db.or_(Movie.poster_url == None, Movie.poster_url == '')
+        ).all()
+    
+    logger.info(f"Updating posters for {len(movies)} movies (force={force})")
+    
+    updated = 0
+    kept = 0
+    
+    for movie in movies:
+        old_poster = movie.poster_url
+        
+        # Try TMDB if available
+        if movie.tmdb_id:
+            poster_url = fetch_tmdb_poster_by_id(movie.tmdb_id)
+        else:
+            # Try searching
+            tmdb_id, poster_url = search_tmdb_posters_by_title(movie.title, movie.year)
+            if tmdb_id:
+                movie.tmdb_id = tmdb_id
+        
+        # Use placeholder if needed
+        if not poster_url:
+            # Check for known posters first
+            normalized_title = movie.title.lower().strip()
+            poster_url = KNOWN_POSTERS.get(normalized_title)
+        
+        if not poster_url:
+            poster_url = build_unique_placeholder(movie.title, movie.year)
+        
+        movie.poster_url = poster_url
+        
+        if old_poster != poster_url:
+            updated += 1
+        else:
+            kept += 1
+    
+    if movies:
+        db.session.commit()
+    
+    logger.info(f"Poster update complete: {updated} updated, {kept} unchanged")
+    
+    return {
+        'total': len(movies),
+        'updated': updated,
+        'kept': kept
+    }
