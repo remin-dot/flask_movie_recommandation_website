@@ -130,6 +130,11 @@ def create_app(config_name='development'):
         db.create_all()
         ensure_movie_schema()
         remove_duplicate_movies()
+        # normalize titles/years and strip HTML from stored data
+        from app.services.posters import clean_movie_data
+        cleaned = clean_movie_data()
+        if cleaned:
+            app.logger.info(f"Cleaned {cleaned} movie records during startup")
         sync_movie_posters()
     
     return app
