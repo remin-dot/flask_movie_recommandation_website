@@ -60,7 +60,7 @@ def dashboard():
         User,
         func.count(Rating.id).label('rating_count')
     ).outerjoin(Rating).group_by(User.id).order_by(
-        'rating_count'.desc()
+        func.count(Rating.id).desc()
     ).limit(5).all()
     
     return render_template('admin/dashboard.html',
@@ -211,6 +211,51 @@ def view_movie(movie_id):
                          movie=movie,
                          ratings=ratings,
                          stats=stats)
+
+
+@admin_bp.route('/movies/<int:movie_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_movie(movie_id):
+    """Edit a movie's information"""
+    movie = db.get_or_404(Movie, movie_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update movie fields
+            movie.title = request.form.get('title', '').strip() or movie.title
+            movie.description = request.form.get('description', '').strip() or movie.description
+            movie.year = request.form.get('year', type=int) or movie.year
+            movie.poster_url = request.form.get('poster_url', '').strip() or movie.poster_url
+            movie.tmdb_id = request.form.get('tmdb_id', type=int) or movie.tmdb_id
+            
+            # Handle genres
+            genre_names = request.form.getlist('genres')
+            # Remove old genres
+            movie.genres.clear()
+            # Add new genres
+            for genre_name in genre_names:
+                if genre_name:
+                    genre = Genre.query.filter_by(name=genre_name).first()
+                    if not genre:
+                        genre = Genre(name=genre_name)
+                        db.session.add(genre)
+                    movie.genres.append(genre)
+            
+            db.session.commit()
+            flash(t('admin.movie_updated', title=movie.title), 'success')
+            return redirect(url_for('admin.view_movie', movie_id=movie_id))
+        
+        except Exception as e:
+            db.session.rollback()
+            flash(t('admin.movie_update_error', error=str(e)), 'danger')
+    
+    # Get available genres for the form
+    all_genres = Genre.query.all()
+    
+    return render_template('admin/edit_movie.html',
+                         movie=movie,
+                         all_genres=all_genres)
 
 
 @admin_bp.route('/movies/<int:movie_id>/delete', methods=['POST'])

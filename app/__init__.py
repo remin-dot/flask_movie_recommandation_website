@@ -3,7 +3,7 @@ Flask application factory and initialization
 Sets up database, login manager, blueprints, and error handlers
 """
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from config import get_config
@@ -100,7 +100,7 @@ def create_app(config_name='development'):
         db.session.rollback()
         
         # Return JSON for API requests
-        if app.request.content_type and 'application/json' in app.request.content_type:
+        if request.content_type and 'application/json' in request.content_type:
             return jsonify({
                 'error': 'An unexpected error occurred',
                 'status': 500

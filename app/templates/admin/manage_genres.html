@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Genres - FlickBase{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-tag"></i> Manage Genres</h1>
+
+<!-- Add New Genre -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-plus"></i> Add New Genre</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('admin.add_genre') }}" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="name" class="form-control" placeholder="Genre name (e.g., Action)" required>
+            </div>
+            <div class="col-md-6">
+                <input type="text" name="description" class="form-control" placeholder="Description (optional)">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Genres Table -->
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Movies</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if genres.items %}
+                {% for genre in genres.items %}
+                <tr>
+                    <td><small>#{{ genre.id }}</small></td>
+                    <td>
+                        <strong>{{ genre.name }}</strong>
+                    </td>
+                    <td>
+                        {% if genre.description %}
+                            <small>{{ genre.description[:50] }}{% if genre.description|length > 50 %}...{% endif %}</small>
+                        {% else %}
+                            <span class="text-muted">No description</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">
+                            {{ genre.movies|length }} movies
+                        </span>
+                    </td>
+                    <td><small>{{ genre.created_at.strftime('%b %d, %Y') }}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="deleteGenre({{ genre.id }}, '{{ genre.name }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No genres found
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if genres.pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if genres.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.manage_genres', page=genres.prev_num) }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in genres.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == genres.page %}
+                <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('admin.manage_genres', page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if genres.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.manage_genres', page=genres.next_num) }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+function deleteGenre(genreId, genreName) {
+    if (confirm(`Delete genre "${genreName}"? Movies with this genre will not be deleted.`)) {
+        fetch(`/admin/genres/${genreId}/delete`, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Genre deleted');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to delete'));
+                }
+            })
+            .catch(e => alert('Error: ' + e));
+    }
+}
+</script>
+{% endblock %}

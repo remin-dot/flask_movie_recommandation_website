@@ -229,6 +229,34 @@ TRANSLATIONS = {
         'zh': '删除临时海报电影出错: {error}',
         'es': 'Error al eliminar películas con carteles temporales: {error}'
     },
+    'admin.movie_updated': {
+        'en': 'Movie "{title}" updated successfully.',
+        'th': 'อัปเดตหนัง "{title}" สำเร็จ',
+        'ja': '映画「{title}」を正常に更新しました。',
+        'zh': '电影"{title}"更新成功。',
+        'es': 'Película "{title}" actualizada correctamente.'
+    },
+    'admin.movie_update_error': {
+        'en': 'Error updating movie: {error}',
+        'th': 'ข้อผิดพลาดในการอัปเดตหนัง: {error}',
+        'ja': '映画の更新エラー: {error}',
+        'zh': '电影更新错误: {error}',
+        'es': 'Error al actualizar la película: {error}'
+    },
+    'admin.movie_deleted': {
+        'en': 'Movie "{title}" deleted successfully.',
+        'th': 'ลบหนัง "{title}" สำเร็จ',
+        'ja': '映画「{title}」を削除しました。',
+        'zh': '电影"{title}"删除成功。',
+        'es': 'Película "{title}" eliminada correctamente.'
+    },
+    'admin.movie_delete_error': {
+        'en': 'Error deleting movie.',
+        'th': 'ข้อผิดพลาดในการลบหนัง',
+        'ja': '映画削除エラー',
+        'zh': '删除电影错误',
+        'es': 'Error al eliminar la película.'
+    },
 }
 
 

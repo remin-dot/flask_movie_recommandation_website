@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title }} - Admin View{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ movie.title }}</h1>
+            <p class="text-muted">ID: {{ movie.id }} | Year: {{ movie.year }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{{ url_for('admin.manage_movies') }}" class="btn btn-secondary">
+                ← Back to Movies
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Movie Poster & Quick Info -->
+        <div class="col-md-3">
+            {% if movie.poster_url %}
+            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" 
+                 class="img-fluid rounded mb-3" style="max-width: 100%;">
+            {% else %}
+            <div class="alert alert-warning">No poster available</div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">📊 Statistics</h5>
+                    <p><strong>Ratings:</strong> {{ stats.ratings_count }}</p>
+                    <p><strong>Avg Rating:</strong> ⭐ {{ stats.avg_rating or 'N/A' }}</p>
+                    <p><strong>Watchlist:</strong> {{ stats.watchlist_count }}</p>
+                    <p><small class="text-muted">
+                        Created: {{ movie.created_at.strftime('%Y-%m-%d') }}
+                    </small></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movie Details -->
+        <div class="col-md-9">
+            <!-- Info Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Movie Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Title:</strong></td>
+                            <td>{{ movie.title }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Year:</strong></td>
+                            <td>{{ movie.year }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TMDB ID:</strong></td>
+                            <td>
+                                {% if movie.tmdb_id %}
+                                <a href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" 
+                                   target="_blank">{{ movie.tmdb_id }}</a>
+                                {% else %}
+                                <span class="text-muted">Not linked</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Poster URL:</strong></td>
+                            <td>
+                                <small class="text-break">
+                                    {% if movie.poster_url %}
+                                    {% if 'placehold.co' in movie.poster_url %}
+                                    <span class="badge badge-warning">Placeholder</span>
+                                    {% else %}
+                                    <span class="badge badge-success">Real</span>
+                                    {% endif %}
+                                    {{ movie.poster_url[:60] }}...
+                                    {% else %}
+                                    <span class="text-muted">None</span>
+                                    {% endif %}
+                                </small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Genres:</strong></td>
+                            <td>
+                                {% if movie.genres %}
+                                    {% for genre in movie.genres %}
+                                    <span class="badge badge-secondary">{{ genre.name }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                <span class="text-muted">None assigned</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Description</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ movie.description }}</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('admin.edit_movie', movie_id=movie.id) }}" 
+                       class="btn btn-warning btn-lg">
+                        ✎ Edit Movie
+                    </a>
+                    <button onclick="deleteMovie({{ movie.id }}, '{{ movie.title }}')" 
+                            class="btn btn-danger btn-lg">
+                        🗑️ Delete Movie
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ratings Section -->
+    {% if stats.ratings_count > 0 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">⭐ Recent Ratings ({{ stats.ratings_count }})</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Rating</th>
+                                <th>Review</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rating in ratings[:10] %}
+                            <tr>
+                                <td><strong>{{ rating.user.username }}</strong></td>
+                                <td>⭐ {{ rating.rating }}/5</td>
+                                <td>
+                                    {% if rating.review %}
+                                    <small>{{ rating.review[:50] }}...</small>
+                                    {% else %}
+                                    <span class="text-muted">No review</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ rating.created_at.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if stats.ratings_count > 10 %}
+                <div class="card-footer text-muted">
+                    Showing 10 of {{ stats.ratings_count }} ratings
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteMovie(movieId, title) {
+    if (!confirm(`Are you sure you want to delete "${title}"?\n\nThis will also delete all associated ratings and watchlist items.`)) {
+        return;
+    }
+    
+    if (!confirm('This action cannot be undone. Type "DELETE ' + title + '" to confirm.')) {
+        return;
+    }
+    
+    const response = prompt('Type "DELETE ' + title + '" to confirm deletion:');
+    if (response !== 'DELETE ' + title) {
+        alert('Deletion cancelled.');
+        return;
+    }
+
+    fetch(`{{ url_for('admin.delete_movie', movie_id='MOVIEID') }}`.replace('MOVIEID', movieId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (data.success) {
+            alert('Movie deleted successfully!');
+            window.location.href = '{{ url_for("admin.manage_movies") }}';
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(err => alert('Error: ' + err));
+}
+</script>
+
+<style>
+.table-responsive {
+    border-radius: 0;
+}
+
+.badge {
+    padding: 5px 10px;
+}
+</style>
+{% endblock %}

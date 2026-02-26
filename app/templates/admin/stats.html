@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - FlickBase Admin{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-chart-bar"></i> System Statistics</h1>
+
+<!-- Overall Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h6 class="text-muted">Total Users</h6>
+                <h2 class="text-info">{{ total_users }}</h2>
+                <small class="text-muted">Admins: <strong>{{ admin_users }}</strong></small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h6 class="text-muted">Total Movies</h6>
+                <h2 class="text-success">{{ total_movies }}</h2>
+                <small class="text-muted">In database</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h6 class="text-muted">Total Ratings</h6>
+                <h2 class="text-warning">{{ total_ratings }}</h2>
+                <small class="text-muted">Avg: <strong>{{ "%.2f"|format(avg_rating) }}/5</strong></small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-danger">
+            <div class="card-body">
+                <h6 class="text-muted">Watchlist Items</h6>
+                <h2 class="text-danger">{{ total_watchlist }}</h2>
+                <small class="text-muted">Movies tracked</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Growth Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Growth (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <h6 class="text-muted">New Users</h6>
+                            <h3 class="text-primary">
+                                <i class="fas fa-user-plus"></i> {{ new_users }}
+                            </h3>
+                            <small class="text-muted">
+                                {% if total_users > 0 %}
+                                    ({{ "%.1f"|format(new_users / total_users * 100) }}% of total)
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border-start border-end">
+                            <h6 class="text-muted">New Ratings</h6>
+                            <h3 class="text-warning">
+                                <i class="fas fa-star"></i> {{ new_ratings }}
+                            </h3>
+                            <small class="text-muted">
+                                {% if total_ratings > 0 %}
+                                    ({{ "%.1f"|format(new_ratings / total_ratings * 100) }}% of total)
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <h6 class="text-muted">New Movies</h6>
+                            <h3 class="text-info">
+                                <i class="fas fa-film"></i> {{ new_movies }}
+                            </h3>
+                            <small class="text-muted">
+                                {% if total_movies > 0 %}
+                                    ({{ "%.1f"|format(new_movies / total_movies * 100) }}% of total)
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-calculator"></i> Key Metrics</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td>Average Rating</td>
+                        <td class="text-end">
+                            <strong>{{ "%.2f"|format(avg_rating) }}/5.0</strong>
+                            {% if avg_rating >= 4 %}
+                                <span class="badge bg-success">Excellent</span>
+                            {% elif avg_rating >= 3 %}
+                                <span class="badge bg-info">Good</span>
+                            {% elif avg_rating >= 2 %}
+                                <span class="badge bg-warning">Fair</span>
+                            {% else %}
+                                <span class="badge bg-danger">Poor</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Avg Ratings per Movie</td>
+                        <td class="text-end">
+                            <strong>
+                                {% if total_movies > 0 %}
+                                    {{ "%.2f"|format(total_ratings / total_movies) }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Avg Watchlist per User</td>
+                        <td class="text-end">
+                            <strong>
+                                {% if total_users > 0 %}
+                                    {{ "%.2f"|format(total_watchlist / total_users) }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Admin Coverage</td>
+                        <td class="text-end">
+                            <strong>
+                                {% if total_users > 0 %}
+                                    {{ "%.1f"|format(admin_users / total_users * 100) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </strong>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Database Summary</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td>Database Status</td>
+                        <td class="text-end">
+                            <span class="badge bg-success"><i class="fas fa-check-circle"></i> Healthy</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Total Records</td>
+                        <td class="text-end">
+                            <strong>{{ total_users + total_movies + total_ratings + total_watchlist }}</strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>User:Movie Ratio</td>
+                        <td class="text-end">
+                            <strong>
+                                {% if total_users > 0 %}
+                                    1:{{ "%.1f"|format(total_movies / total_users) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Monthly Activity</td>
+                        <td class="text-end">
+                            <strong>
+                                {% set monthly_activity = new_users + new_ratings + new_movies %}
+                                {{ monthly_activity }} actions
+                            </strong>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistical Overview -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="fas fa-bar-chart"></i> System Health</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">
+                    Your FlickBase system has <strong>{{ total_users }}</strong> users managing 
+                    <strong>{{ total_movies }}</strong> movies with <strong>{{ total_ratings }}</strong> total ratings. 
+                    The system has been growing steadily with <strong>{{ new_users }}</strong> new users, 
+                    <strong>{{ new_movies }}</strong> new movies, and <strong>{{ new_ratings }}</strong> new ratings in the last 30 days.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> 
+            Use the admin panel to manage users, movies, genres, and ratings. 
+            Regular monitoring helps maintain database health and user experience.
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.text-center h3 {
+    margin: 15px 0;
+}
+</style>
+{% endblock %}
