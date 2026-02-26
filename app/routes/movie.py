@@ -17,6 +17,7 @@ from app.i18n import get_current_language, translate
 from app.services.recommendations import RecommendationService
 from app.services.posters import get_poster_for_movie
 from app.services.search_index import search_index
+from app.utils import validate_search_query, validate_rating
 
 logger = logging.getLogger(__name__)
 
@@ -398,30 +399,39 @@ def search():
         flash(t('flash.search_min'), 'warning')
         return redirect(url_for('movie.home'))
     
-    current_lang = get_current_language()
-    matched_ids = search_index.search_ids(query, current_lang)
-    total = len(matched_ids)
-    start = (page - 1) * per_page
-    end = start + per_page
-    page_ids = matched_ids[start:end]
+    try:
+        # Validate and sanitize search query
+        sanitized_query = validate_search_query(query)
+        
+        current_lang = get_current_language()
+        matched_ids = search_index.search_ids(sanitized_query, current_lang)
+        total = len(matched_ids)
+        start = (page - 1) * per_page
+        end = start + per_page
+        page_ids = matched_ids[start:end]
 
-    if page_ids:
-        ordering = case({movie_id: index for index, movie_id in enumerate(page_ids)}, value=Movie.id)
-        items = (
-            Movie.query
-            .options(joinedload(Movie.genres))
-            .filter(Movie.id.in_(page_ids))
-            .order_by(ordering)
-            .all()
-        )
-    else:
-        items = []
+        if page_ids:
+            ordering = case({movie_id: index for index, movie_id in enumerate(page_ids)}, value=Movie.id)
+            items = (
+                Movie.query
+                .options(joinedload(Movie.genres))
+                .filter(Movie.id.in_(page_ids))
+                .order_by(ordering)
+                .all()
+            )
+        else:
+            items = []
 
-    results = SimplePagination(items, page, per_page, total)
+        results = SimplePagination(items, page, per_page, total)
+        
+        return render_template('movies/search.html',
+                             results=results,
+                             search_query=sanitized_query)
     
-    return render_template('movies/search.html',
-                         results=results,
-                         search_query=query)
+    except Exception as e:
+        logger.error(f"Search error for query '{query}': {str(e)}")
+        flash(t('flash.search_error'), 'danger')
+        return redirect(url_for('movie.home'))
 
 
 @movie_bp.route('/search/suggest')
@@ -431,9 +441,16 @@ def search_suggest():
     if len(query) < 2:
         return jsonify({'suggestions': []})
 
-    current_lang = get_current_language()
-    suggestions = search_index.suggest(query, current_lang, limit=8)
-    return jsonify({'suggestions': suggestions})
+    try:
+        # Validate and sanitize search query
+        sanitized_query = validate_search_query(query)
+        current_lang = get_current_language()
+        suggestions = search_index.suggest(sanitized_query, current_lang, limit=8)
+        return jsonify({'suggestions': suggestions})
+    
+    except Exception as e:
+        logger.error(f"Search suggestion error for query '{query}': {str(e)}")
+        return jsonify({'suggestions': [], 'error': str(e)}), 500
 
 
 @movie_bp.route('/recommendations')
