@@ -8,6 +8,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from app.models import db, User, Movie, Rating, Watchlist, Genre
 from app.i18n import translate
+from app.services.posters import sync_movie_details_with_tmdb, remove_movies_with_placeholder_posters
 from sqlalchemy import func
 
 
@@ -357,3 +358,66 @@ def stats():
                          new_users=new_users,
                          new_ratings=new_ratings,
                          new_movies=new_movies)
+
+
+@admin_bp.route('/sync-movie-details', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def sync_movie_details():
+    """Synchronize movie titles, descriptions, and details with TMDB poster data"""
+    if request.method == 'POST':
+        try:
+            result = sync_movie_details_with_tmdb()
+            
+            flash(
+                t('admin.sync_complete', 
+                  total=result['total'],
+                  updated=result['updated'],
+                  unchanged=result['unchanged'],
+                  failed=result['failed']),
+                'success'
+            )
+            
+            return jsonify({
+                'success': True,
+                'result': result
+            })
+        except Exception as e:
+            flash(t('admin.sync_error', error=str(e)), 'danger')
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    return render_template('admin/sync_movie_details.html')
+
+
+@admin_bp.route('/remove-placeholder-movies', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def remove_placeholder_movies():
+    """Remove movies that have only placeholder posters (not real TMDB posters)"""
+    if request.method == 'POST':
+        try:
+            result = remove_movies_with_placeholder_posters()
+            
+            flash(
+                t('admin.placeholder_removed',
+                  removed=result['removed'],
+                  ratings=result['ratings_removed'],
+                  watchlist=result['watchlist_removed']),
+                'success'
+            )
+            
+            return jsonify({
+                'success': True,
+                'result': result
+            })
+        except Exception as e:
+            flash(t('admin.placeholder_error', error=str(e)), 'danger')
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    return render_template('admin/remove_placeholder_movies.html')
