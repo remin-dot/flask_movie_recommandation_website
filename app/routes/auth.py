@@ -11,6 +11,7 @@ from wtforms import StringField, PasswordField, SubmitField, ValidationError
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp
 from app.models import db, User
 from app.i18n import translate
+from app.utils import validate_password as validate_pass_strength
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class RegistrationForm(FlaskForm):
     ])
     password = PasswordField('Password', validators=[
         DataRequired(),
-        Length(min=6)
+        Length(min=8)
     ])
     confirm_password = PasswordField('Confirm Password', validators=[
         DataRequired(),
@@ -53,6 +54,13 @@ class RegistrationForm(FlaskForm):
         """Check if email already registered"""
         if User.query.filter_by(email=field.data).first():
             raise ValidationError('Email already registered.')
+    
+    def validate_password(self, field):
+        """Validate password strength"""
+        try:
+            validate_pass_strength(field.data)
+        except Exception as e:
+            raise ValidationError(str(e))
 
 
 class LoginForm(FlaskForm):
@@ -82,13 +90,13 @@ def register():
             db.session.add(user)
             db.session.commit()
             
-            logger.info(f"New user registered: {user.username}")
+            logger.info(f"New user registered: {user.username} ({user.email})")
             flash(t('flash.register_success'), 'success')
             return redirect(url_for('auth.login'))
         
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Registration error: {str(e)}")
+            logger.error(f"Registration error for username {form.username.data}: {str(e)}")
             flash(t('flash.register_error'), 'danger')
     
     return render_template('auth/register.html', form=form)
@@ -103,21 +111,28 @@ def login():
     form = LoginForm()
     
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        try:
+            user = User.query.filter_by(username=form.username.data).first()
+            
+            if user is None or not user.check_password(form.password.data):
+                logger.warning(f"Failed login attempt for user: {form.username.data}")
+                flash(t('flash.invalid_login'), 'danger')
+                return redirect(url_for('auth.login'))
+            
+            login_user(user, remember=True)
+            logger.info(f"User {user.username} logged in successfully")
+            next_page = request.args.get('next')
+            
+            # Validate redirect URL for security
+            if not next_page or next_page.startswith('/'):
+                next_page = url_for('user.dashboard')
+            
+            flash(t('flash.welcome_back', username=user.username), 'success')
+            return redirect(next_page)
         
-        if user is None or not user.check_password(form.password.data):
-            flash(t('flash.invalid_login'), 'danger')
-            return redirect(url_for('auth.login'))
-        
-        login_user(user, remember=True)
-        next_page = request.args.get('next')
-        
-        # Validate redirect URL for security
-        if not next_page or next_page.startswith('/'):
-            next_page = url_for('user.dashboard')
-        
-        flash(t('flash.welcome_back', username=user.username), 'success')
-        return redirect(next_page)
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}")
+            flash(t('flash.login_error'), 'danger')
     
     return render_template('auth/login.html', form=form)
 
