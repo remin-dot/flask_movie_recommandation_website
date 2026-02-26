@@ -1,0 +1,275 @@
+{% extends "admin/dashboard.html" %}
+
+{% block admin_content %}
+<div class="admin-panel">
+    <h2>✕ ลบหนังที่มีโปสเตอร์ชั่วคราว</h2>
+    <p class="subtitle">ลบหนังที่ไม่มีโปสเตอร์จริง เฉพาะโปสเตอร์ชั่วคราวจาก placehold.co เท่านั้น</p>
+    
+    <div class="warning-box">
+        <h3>⚠️ คำเตือน - الإجراء لا رجعة فيه!</h3>
+        <p><strong>การลบนี้จะเป็นแบบถาวร:</strong></p>
+        <ul>
+            <li>✕ ลบหนังทั้งหมดที่มีโปสเตอร์ชั่วคราว</li>
+            <li>✕ ลบคะแนนทั้งหมดของหนังเหล่านี้</li>
+            <li>✕ ลบรายการอยากดูของหนังเหล่านี้</li>
+            <li>✓ ข้อมูลผู้ใช้อื่นๆ จะไม่ได้รับผลกระทบ</li>
+        </ul>
+    </div>
+    
+    <div class="info-box">
+        <h3>หนังที่จะถูกลบ:</h3>
+        <p>เฉพาะหนังที่มี poster URL ซึ่ง:</p>
+        <code>placehold.co/500x750/...</code>
+        <p class="text-muted">โปสเตอร์เหล่านี้เป็นรูปภาพชั่วคราว ไม่ใช่โปสเตอร์จริงจาก TMDB</p>
+    </div>
+    
+    <div class="action-box">
+        <button id="remove-btn" class="btn btn-danger btn-lg" style="margin-top: 20px;">
+            <span class="spinner" id="spinner" style="display:none;">⏳ </span>
+            I Understand - Delete Placeholder Movies
+        </button>
+        
+        <div id="remove-result" class="result-box" style="display:none; margin-top: 30px;">
+            <h3>✓ ผลการลบ:</h3>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <span class="stat-label">📽️ หนังที่ลบ:</span>
+                    <span class="stat-value deleted" id="removed-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">⭐ คะแนนที่ลบ:</span>
+                    <span class="stat-value deleted" id="ratings-count">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">📋 รายการอยากดูที่ลบ:</span>
+                    <span class="stat-value deleted" id="watchlist-count">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-panel {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.admin-panel h2 {
+    color: #dc3545;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.warning-box {
+    background-color: #f8d7da;
+    border: 2px solid #f5c6cb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    color: #721c24;
+}
+
+.warning-box h3 {
+    margin-top: 0;
+    color: #721c24;
+    font-weight: bold;
+}
+
+.warning-box ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+.warning-box li {
+    margin-bottom: 8px;
+}
+
+.info-box {
+    background-color: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.info-box h3 {
+    margin-top: 0;
+    color: #0056b3;
+}
+
+.info-box code {
+    background-color: #f0f0f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    display: block;
+    margin: 10px 0;
+    border-left: 3px solid #0056b3;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.action-box {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #c82333;
+    border-color: #bd2130;
+    transform: scale(1.05);
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 18px;
+}
+
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.result-box {
+    background-color: #f8fff8;
+    border: 2px solid #28a745;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.result-box h3 {
+    margin-top: 0;
+    color: #155724;
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-value.deleted {
+    color: #dc3545;
+}
+</style>
+
+<script>
+document.getElementById('remove-btn').addEventListener('click', async function() {
+    const button = this;
+    const spinner = document.getElementById('spinner');
+    const result = document.getElementById('remove-result');
+    
+    // Double confirmation
+    const confirm1 = window.confirm(
+        '⚠️ This will permanently delete movies with placeholder posters.\n\n' +
+        'Are you absolutely sure?'
+    );
+    if (!confirm1) return;
+    
+    const confirm2 = window.confirm(
+        '⚠️ FINAL WARNING: This cannot be undone!\n\n' +
+        'Type "DELETE" to confirm permanent deletion.'
+    );
+    if (confirm2 !== true) {
+        const response = prompt('Type "DELETE" to confirm:');
+        if (response !== 'DELETE') {
+            alert('❌ Cancelled.');
+            return;
+        }
+    }
+    
+    button.disabled = true;
+    spinner.style.display = 'inline';
+    result.style.display = 'none';
+    
+    try {
+        const response = await fetch('{{ url_for("admin.remove_placeholder_movies") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const res = data.result;
+            document.getElementById('removed-count').textContent = res.removed;
+            document.getElementById('ratings-count').textContent = res.ratings_removed;
+            document.getElementById('watchlist-count').textContent = res.watchlist_removed;
+            
+            result.style.display = 'block';
+            
+            alert('✓ Successfully deleted!\n\n' +
+                  'Movies: ' + res.removed + '\n' +
+                  'Ratings: ' + res.ratings_removed + '\n' +
+                  'Watchlist items: ' + res.watchlist_removed);
+        } else {
+            alert('✗ Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('✗ Error: ' + error.message);
+    } finally {
+        button.disabled = false;
+        spinner.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}
