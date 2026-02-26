@@ -331,6 +331,14 @@ def update_posters_command(force):
     print(f"✓ Posters unchanged: {result['kept']}")
 
 
+@app.cli.command('clean_data')
+def clean_data_command():
+    """Run data cleaning routines on movie records."""
+    print("Cleaning movie data...")
+    from app.services.posters import clean_movie_data
+    count = clean_movie_data()
+    print(f"✓ Cleaned {count} movie records")
+
 
 @app.cli.command()
 def create_admin():
