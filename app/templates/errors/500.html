@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error - FlickBase{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+        <div class="error-container py-5">
+            <h1 class="display-1 text-danger"><i class="fas fa-server"></i></h1>
+            <h2>500 - Internal Server Error</h2>
+            <p class="lead text-muted">Sorry, something went wrong on our end. Please try again later.</p>
+            <a href="{{ url_for('movie.home') }}" class="btn btn-primary btn-lg mt-3">
+                <i class="fas fa-home"></i> Go Back Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

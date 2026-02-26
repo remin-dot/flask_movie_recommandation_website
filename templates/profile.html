@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - FlickBase{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-12">
+            <h1><i class="fas fa-user-circle"></i> {{ t('profile.title') }}</h1>
+            <p class="text-muted">{{ t('profile.subtitle') }}</p>
+        </div>
+    </div>
+
+    <!-- Profile Stats -->
+    <div class="row mb-5">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-primary text-white shadow-sm">
+                <div class="card-body text-center">
+                    <h2>{{ current_user.username }}</h2>
+                    <p class="text-white-50">{{ t('profile.member_since') }} {{ current_user.created_at.strftime('%B %Y') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-success text-white shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-white-50">{{ t('profile.total_ratings') }}</h6>
+                            <h2>{{ rating_count }}</h2>
+                        </div>
+                        <i class="fas fa-star fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-info text-white shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-white-50">{{ t('profile.average_rating') }}</h6>
+                            <h2>{{ avg_rating }}</h2>
+                        </div>
+                        <i class="fas fa-chart-bar fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Info Card -->
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> {{ t('profile.account_info') }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong></p>
+                            <p class="text-muted">{{ current_user.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong></p>
+                            <p class="text-muted">{{ current_user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Member Since:</strong></p>
+                            <p class="text-muted">{{ current_user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Total Movies Rated:</strong></p>
+                            <p class="text-muted">{{ rating_count }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating History -->
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-4"><i class="fas fa-history"></i> {{ t('profile.my_history') }}</h3>
+
+            {% if user_ratings %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>{{ t('common.movie') }}</th>
+                            <th>{{ t('common.genre') }}</th>
+                            <th>Year</th>
+                            <th>{{ t('common.rating') }}</th>
+                            <th>{{ t('common.date') }}</th>
+                            <th>{{ t('common.action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rating in user_ratings %}
+                        <tr>
+                            <td>
+                                <strong>{{ rating.movie.title }}</strong>
+                                {% if rating.review %}
+                                <div class="small text-muted mt-1">
+                                    <i class="fas fa-quote-left"></i> {{ rating.review[:50] }}...
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-primary">{{ rating.movie.genre }}</span></td>
+                            <td>{{ rating.movie.year }}</td>
+                            <td>
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= rating.rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td><small>{{ rating.created_at.strftime('%Y-%m-%d') }}</small></td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('movie_detail', movie_id=rating.movie.id) }}" class="btn btn-outline-primary" title="View movie">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('rate_movie', movie_id=rating.movie.id) }}" class="btn btn-outline-info" title="Edit rating">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Rating Distribution -->
+            <div class="row mt-5">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie"></i> {{ t('profile.rating_distribution') }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="rating-distribution">
+                                {% for stars in range(5, 0, -1) %}
+                                    {% set count = user_ratings|selectattr('rating', 'equalto', stars)|list|length %}
+                                    {% set percentage = ((count / rating_count) * 100) if rating_count > 0 else 0 %}
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>
+                                                {% for i in range(stars) %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% endfor %}
+                                            </span>
+                                            <span class="badge bg-secondary">{{ count }}</span>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" style="width: {{ percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i> You haven't rated any movies yet. 
+                <a href="{{ url_for('movie_list') }}" class="alert-link">Start rating movies</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

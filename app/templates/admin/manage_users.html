@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - FlickBase{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-users-cog"></i> Manage Users</h1>
+
+<!-- Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="search" class="form-control" placeholder="Search users..." value="{{ search }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-secondary">Reset</a>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Joined</th>
+                <th>Ratings</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users.items %}
+            <tr>
+                <td><strong>{{ user.username }}</strong></td>
+                <td>{{ user.email }}</td>
+                <td><small>{{ user.created_at.strftime('%b %d, %Y') }}</small></td>
+                <td>
+                    {% set rating_count = user.ratings|length %}
+                    <span class="badge bg-info">{{ rating_count }}</span>
+                </td>
+                <td>
+                    {% if user.is_admin %}
+                    <span class="badge bg-danger">Admin</span>
+                    {% else %}
+                    <span class="badge bg-secondary">User</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                    <button class="btn btn-sm btn-outline-warning" 
+                            onclick="toggleAdmin({{ user.id }}, '{{ user.username }}')">
+                        {{ 'Revoke' if user.is_admin else 'Make' }} Admin
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if users.pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if users.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.manage_users', page=users.prev_num, search=search) }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in users.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == users.page %}
+                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('admin.manage_users', page=page_num, search=search) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if users.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.manage_users', page=users.next_num, search=search) }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<script>
+function toggleAdmin(userId, username) {
+    if (confirm(`Are you sure you want to toggle admin status for ${username}?`)) {
+        fetch(`/admin/users/${userId}/toggle-admin`, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Admin status updated');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error updating admin status');
+                }
+            });
+    }
+}
+</script>
+{% endblock %}

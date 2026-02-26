@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}My Ratings - FlickBase{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-list-ul"></i> My Ratings</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('user.my_ratings', sort_by='recent') }}" 
+               class="btn btn-outline-primary {% if sort_by == 'recent' %}active{% endif %}">
+                <i class="fas fa-calendar"></i> Recent
+            </a>
+            <a href="{{ url_for('user.my_ratings', sort_by='rating') }}" 
+               class="btn btn-outline-primary {% if sort_by == 'rating' %}active{% endif %}">
+                <i class="fas fa-star"></i> Rating
+            </a>
+            <a href="{{ url_for('user.my_ratings', sort_by='title') }}" 
+               class="btn btn-outline-primary {% if sort_by == 'title' %}active{% endif %}">
+                <i class="fas fa-sort-alpha-down"></i> Title
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if ratings.items %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Movie</th>
+                <th>Year</th>
+                <th>Rating</th>
+                <th>Review</th>
+                <th>Rated On</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rating in ratings.items %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('movie.movie_detail', movie_id=rating.movie.id) }}">
+                        {{ rating.movie.title }}
+                    </a>
+                </td>
+                <td>{{ rating.movie.year }}</td>
+                <td>
+                    <span class="rating-stars">
+                        {% for i in range(1, 6) %}
+                            {% if i <= rating.rating %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                        {% endfor %}
+                    </span>
+                    <span class="badge bg-info">{{ rating.rating }}/5</span>
+                </td>
+                <td>
+                    {% if rating.review %}
+                        <small>{{ rating.review[:50] }}...</small>
+                    {% else %}
+                        <span class="text-muted"><small>No review</small></span>
+                    {% endif %}
+                </td>
+                <td><small>{{ rating.created_at.strftime('%b %d, %Y') }}</small></td>
+                <td>
+                    <a href="{{ url_for('movie.rate_movie', movie_id=rating.movie.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if ratings.pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if ratings.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('user.my_ratings', page=ratings.prev_num, sort_by=sort_by) }}">Previous</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in ratings.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == ratings.page %}
+                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('user.my_ratings', page=page_num, sort_by=sort_by) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if ratings.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('user.my_ratings', page=ratings.next_num, sort_by=sort_by) }}">Next</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> You haven't rated any movies yet. 
+    <a href="{{ url_for('movie.movies') }}">Start exploring</a>!
+</div>
+{% endif %}
+{% endblock %}

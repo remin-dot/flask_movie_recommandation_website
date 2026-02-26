@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Home - FlickBase{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="py-5 mb-5">
+        <div class="row align-items-center gap-5">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Discover Your Next <span class="gradient-text">Favorite Movie</span></h1>
+                <p class="lead mb-4 opacity-75">Explore thousands of movies, rate them, and get personalized recommendations based on your taste.</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    {% if not current_user.is_authenticated %}
+                    <a class="btn btn-primary btn-lg px-4" href="{{ url_for('register') }}">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg px-4" href="{{ url_for('movie_list') }}">
+                        <i class="fas fa-film"></i> Browse Movies
+                    </a>
+                    {% else %}
+                    <a class="btn btn-primary btn-lg px-4" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg px-4" href="{{ url_for('recommendations') }}">
+                        <i class="fas fa-magic"></i> Get Recommendations
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 mt-5 mt-lg-0">
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1.5rem; height: 350px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);">
+                    <div class="text-center">
+                        <i class="fas fa-film" style="font-size: 4rem; opacity: 0.9;"></i>
+                        <p class="mt-4 fs-5 fw-bold">10,000+ Movies</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-5 mb-5">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body py-5">
+                        <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title fw-bold">Rate & Review</h5>
+                        <p class="card-text opacity-75">Share your thoughts and rate movies with our 5-star system</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body py-5">
+                        <i class="fas fa-wand-magic-sparkles fa-3x text-info mb-3"></i>
+                        <h5 class="card-title fw-bold">Smart Recommendations</h5>
+                        <p class="card-text opacity-75">Get personalized movie suggestions based on your ratings</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body py-5">
+                        <i class="fas fa-bookmark fa-3x text-danger mb-3"></i>
+                        <h5 class="card-title fw-bold">Watchlist</h5>
+                        <p class="card-text opacity-75">Save movies and track them easily in one place</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Movies Section -->
+    <section class="py-5 mb-5">
+        <div class="mb-5">
+            <h2 class="fw-bold mb-2"><i class="fas fa-fire"></i> Featured Movies</h2>
+            <p class="opacity-75">Handpicked movie selections just for you</p>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for movie in featured_movies %}
+            <div class="col">
+                <div class="card h-100 overflow-hidden">
+                    {% if movie.poster_url %}
+                    <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" class="card-img-top" style="height: 300px; object-fit: cover;">
+                    {% else %}
+                    <div class="bg-secondary d-flex align-items-center justify-content-center" style="height: 300px;">
+                        <i class="fas fa-image fa-4x opacity-50" style="color: white;"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">{{ movie.title }}</h5>
+                        <p class="text-muted small"><i class="fas fa-calendar"></i> {{ movie.year }}</p>
+                        
+                        <div class="mb-2 d-flex align-items-center">
+                            <span class="rating-stars me-2">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= movie.get_average_rating()|int %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                {% endfor %}
+                            </span>
+                            <span class="fw-bold">{{ "%.1f"|format(movie.get_average_rating()) }}</span>
+                        </div>
+                        <p class="card-text text-muted small">{{ movie.description[:70] }}...</p>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-5">
+            <a href="{{ url_for('movie_list') }}" class="btn btn-outline-primary btn-lg px-5">
+                <i class="fas fa-arrow-right"></i> Explore All Movies
+            </a>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-5 my-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 1.5rem; color: white; box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);">
+        <div class="container text-center py-5">
+            <h2 class="fw-bold mb-3 fs-1">Ready to Start?</h2>
+            <p class="lead mb-5 opacity-90">Join thousands of movie enthusiasts and get personalized recommendations</p>
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5">
+                <i class="fas fa-user-plus"></i> Create Account
+            </a>
+            {% else %}
+            <a href="{{ url_for('recommendations') }}" class="btn btn-light btn-lg px-5">
+                <i class="fas fa-wand-magic-sparkles"></i> Get Recommendations
+            </a>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

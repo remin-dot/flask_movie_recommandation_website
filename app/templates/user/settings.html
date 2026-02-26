@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('nav.settings') }} - FlickBase{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h1 class="mb-4"><i class="fas fa-cog"></i> {{ t('settings.title') }}</h1>
+        
+        <!-- Change Email -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-envelope"></i> {{ t('settings.change_email') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('user.update_email') }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('settings.current_email') }}</label>
+                        <input type="text" class="form-control" value="{{ current_user.email }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="email">{{ t('settings.new_email') }}</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ t('settings.update_email') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Change Password -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-lock"></i> {{ t('settings.change_password') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('user.update_password') }}">
+                    <div class="mb-3">
+                        <label class="form-label" for="current_password">{{ t('settings.current_password') }}</label>
+                        <input type="password" class="form-control" id="current_password" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new_password">{{ t('settings.new_password') }}</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required minlength="6">
+                        <small class="form-text text-muted">{{ t('settings.password_hint') }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="confirm_password">{{ t('settings.confirm_new_password') }}</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ t('settings.update_password') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Danger Zone -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> {{ t('settings.danger_zone') }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">{{ t('settings.delete_warning') }}</p>
+                <button class="btn btn-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                    <i class="fas fa-trash"></i> {{ t('settings.delete_account') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-circle"></i> {{ t('settings.delete_modal_title') }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger"><strong>{{ t('settings.warning') }}</strong> {{ t('settings.delete_modal_text') }}</p>
+                <p>{{ t('settings.delete_data_text') }}</p>
+                <p>{{ t('settings.type_username') }}</p>
+                <input type="text" class="form-control" id="confirmUsername" placeholder="{{ current_user.username }}">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('common.cancel') }}</button>
+                <button type="button" class="btn btn-danger" onclick="deleteAccount()">
+                    <i class="fas fa-trash"></i> {{ t('settings.delete_my_account') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteAccount() {
+    const confirmed = document.getElementById('confirmUsername').value;
+    if (confirmed === '{{ current_user.username }}') {
+        if (confirm('{{ t("settings.confirm_final") }}')) {
+            // Implement delete account logic
+            alert('{{ t("settings.delete_not_implemented") }}');
+        }
+    } else {
+        alert('{{ t("settings.username_mismatch") }}');
+    }
+}
+</script>
+{% endblock %}

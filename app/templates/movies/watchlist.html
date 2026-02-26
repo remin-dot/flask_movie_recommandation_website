@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('watchlist.title') }} - FlickBase{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-bookmark"></i> {{ t('watchlist.title') }}</h1>
+
+{% if watchlist.items %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+    {% for item in watchlist.items %}
+    <div class="col">
+        <div class="card movie-card h-100">
+            <div class="movie-poster">
+                {% if item.movie.poster_url %}
+                    <img src="{{ item.movie.poster_url }}" alt="{{ item.movie.title }}">
+                {% else %}
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ item.movie.title }}</h5>
+                <p class="text-muted"><small><i class="fas fa-calendar"></i> {{ item.movie.year }}</small></p>
+                
+                <div class="rating-stars mb-2">
+                    {% set avg_rating = item.movie.get_average_rating_db() %}
+                    {% for i in range(1, 6) %}
+                        {% if i <= avg_rating %}<i class="fas fa-star"></i>
+                        {% elif i - avg_rating < 1 %}<i class="fas fa-star-half-alt"></i>
+                        {% else %}<i class="far fa-star"></i>{% endif %}
+                    {% endfor %}
+                    <span class="ms-2 text-body">{{ "%.1f"|format(avg_rating) }}</span>
+                </div>
+                
+                <p class="card-text text-muted"><small>{{ localize_text(item.movie.description) | truncate(80, True, '...') }}</small></p>
+            </div>
+            <div class="card-footer bg-white border-top-0">
+                <a href="{{ url_for('movie.movie_detail', movie_id=item.movie.id) }}" class="btn btn-primary btn-sm me-2 w-auto">
+                    <i class="fas fa-eye"></i> {{ t('watchlist.view') }}
+                </a>
+                <button class="btn btn-danger btn-sm" onclick="removeFromWatchlist({{ item.movie.id }})">
+                    <i class="fas fa-times"></i> {{ t('watchlist.remove') }}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if watchlist.pages > 1 %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if watchlist.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('movie.watchlist', page=watchlist.prev_num) }}">{{ t('pagination.previous') }}</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in watchlist.iter_pages() %}
+            {% if page_num %}
+                {% if page_num == watchlist.page %}
+                <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('movie.watchlist', page=page_num) }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if watchlist.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('movie.watchlist', page=watchlist.next_num) }}">{{ t('pagination.next') }}</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> {{ t('watchlist.empty') }}
+    <a href="{{ url_for('movie.movies') }}">{{ t('watchlist.browse') }}</a>
+</div>
+{% endif %}
+
+<script>
+function removeFromWatchlist(movieId) {
+    if (confirm('{{ t("watchlist.confirm_remove") }}')) {
+        fetch(`/remove-from-watchlist/${movieId}`, {method: 'POST'}).then(r => r.json()).then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

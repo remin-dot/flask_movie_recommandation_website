@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Movies - FlickBase{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-film"></i> {{ t('movies.title') }}</h1>
+            <p class="text-muted">{{ t('movies.subtitle') }}</p>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('movie_list') }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label" for="genreFilter">Genre</label>
+                        <select class="form-select" id="genreFilter" name="genre">
+                            <option value="">All Genres</option>
+                            {% for genre in genres %}
+                            <option value="{{ genre }}" {% if selected_genre == genre %}selected{% endif %}>{{ genre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="yearFromFilter">Year From</label>
+                        <input type="number" class="form-control" id="yearFromFilter" name="year_from" min="1800" max="2100" value="{{ year_from if year_from else '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="yearToFilter">Year To</label>
+                        <input type="number" class="form-control" id="yearToFilter" name="year_to" min="1800" max="2100" value="{{ year_to if year_to else '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="minRatingFilter">Min Rating</label>
+                        <select class="form-select" id="minRatingFilter" name="min_rating">
+                            <option value="">Any</option>
+                            {% for rating_value in ['1', '2', '3', '4', '4.5'] %}
+                            <option value="{{ rating_value }}" {% if min_rating and min_rating == rating_value|float %}selected{% endif %}>{{ rating_value }}+</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="sortFilter">Sort By</label>
+                        <select class="form-select" id="sortFilter" name="sort">
+                            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest</option>
+                            <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Oldest</option>
+                            <option value="rating_desc" {% if sort_by == 'rating_desc' %}selected{% endif %}>Highest Rated</option>
+                            <option value="title_asc" {% if sort_by == 'title_asc' %}selected{% endif %}>Title A-Z</option>
+                            <option value="title_desc" {% if sort_by == 'title_desc' %}selected{% endif %}>Title Z-A</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sliders-h"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('movie_list') }}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Movies Grid -->
+    <div class="row">
+        {% if movies.items %}
+            {% for movie in movies.items %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm movie-card overflow-hidden">
+                    {% if movie.poster_url %}
+                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="d-block">
+                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" class="card-img-top">
+                    </a>
+                    {% else %}
+                    <div class="bg-secondary" style="height: 250px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-image text-white" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ movie.title }}</h5>
+                        <p class="text-muted small"><i class="fas fa-calendar"></i> {{ movie.year }}</p>
+                        <p class="card-text text-muted">
+                            <small>
+                                <span class="badge bg-primary">{{ movie.genre }}</span>
+                            </small>
+                        </p>
+                        <p class="card-text">{{ movie_desc(movie, 80) }}</p>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-warning">
+                                    <i class="fas fa-star"></i> {{ movie.get_average_rating() }}/5
+                                </small>
+                                <small class="text-muted">({{ movie.get_rating_count() }})</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-eye"></i> {{ t('movies.view_details') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i> No movies found. Try a different genre!
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if movies.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            <!-- Previous Page -->
+            {% if movies.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('movie_list', page=movies.prev_num, genre=selected_genre, year_from=year_from, year_to=year_to, min_rating=min_rating, sort=sort_by) }}">
+                    Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+
+            <!-- Page Numbers -->
+            {% for page_num in movies.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == movies.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('movie_list', page=page_num, genre=selected_genre, year_from=year_from, year_to=year_to, min_rating=min_rating, sort=sort_by) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Page -->
+            {% if movies.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('movie_list', page=movies.next_num, genre=selected_genre, year_from=year_from, year_to=year_to, min_rating=min_rating, sort=sort_by) }}">
+                    Next
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

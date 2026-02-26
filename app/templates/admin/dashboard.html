@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - FlickBase{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-user-shield"></i> Admin Dashboard</h1>
+
+<!-- Admin Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-users text-primary"></i></h3>
+                <h5>{{ total_users }}</h5>
+                <p class="text-muted">Total Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-film text-info"></i></h3>
+                <h5>{{ total_movies }}</h5>
+                <p class="text-muted">Total Movies</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-star text-warning"></i></h3>
+                <h5>{{ total_ratings }}</h5>
+                <p class="text-muted">Total Ratings</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-bookmark text-success"></i></h3>
+                <h5>{{ total_watchlist }}</h5>
+                <p class="text-muted">Watchlist Items</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Management Links -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-primary w-100 py-3">
+            <i class="fas fa-users fa-2x d-block mb-2"></i> Manage Users
+        </a>
+    </div>
+    <div class="col-md-4 mb-3">
+        <a href="{{ url_for('admin.manage_movies') }}" class="btn btn-outline-info w-100 py-3">
+            <i class="fas fa-film fa-2x d-block mb-2"></i> Manage Movies
+        </a>
+    </div>
+    <div class="col-md-4 mb-3">
+        <a href="{{ url_for('admin.manage_ratings') }}" class="btn btn-outline-warning w-100 py-3">
+            <i class="fas fa-star fa-2x d-block mb-2"></i> Manage Ratings
+        </a>
+    </div>
+    <div class="col-md-4 mb-3">
+        <a href="{{ url_for('admin.manage_genres') }}" class="btn btn-outline-success w-100 py-3">
+            <i class="fas fa-theater-masks fa-2x d-block mb-2"></i> Manage Genres
+        </a>
+    </div>
+    <div class="col-md-4 mb-3">
+        <a href="{{ url_for('admin.stats') }}" class="btn btn-outline-secondary w-100 py-3">
+            <i class="fas fa-chart-bar fa-2x d-block mb-2"></i> Statistics
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Ratings</h5>
+            </div>
+            <div class="card-body">
+                {% for rating in recent_ratings[:5] %}
+                <div class="mb-2">
+                    <small>
+                        <strong>{{ rating.user.username }}</strong> rated 
+                        <strong>{{ rating.movie.title }}</strong> 
+                        <span class="rating-stars">
+                            {% for i in range(1, 6) %}
+                                {% if i <= rating.rating %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                            {% endfor %}
+                        </span>
+                    </small><br>
+                    <small class="text-muted">{{ rating.created_at.strftime('%b %d, %H:%M') }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-plus"></i> Recent Users</h5>
+            </div>
+            <div class="card-body">
+                {% for user in recent_users %}
+                <div class="mb-2">
+                    <small>
+                        <strong>{{ user.username }}</strong> 
+                        ({{ user.email }})
+                        {% if user.is_admin %}<span class="badge bg-danger">Admin</span>{% endif %}
+                    </small><br>
+                    <small class="text-muted">{{ user.created_at.strftime('%b %d, %Y') }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Rated Movies -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Rated Movies</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Movie</th>
+                            <th>Rating</th>
+                            <th>Ratings Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movie, avg_rating, rating_count in top_movies %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('admin.view_movie', movie_id=movie.id) }}">{{ movie.title }}</a>
+                            </td>
+                            <td>
+                                <span class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        {% if i <= avg_rating %}<i class="fas fa-star" style="color: gold;"></i>
+                                        {% elif i - avg_rating < 1 %}<i class="fas fa-star-half-alt" style="color: gold;"></i>
+                                        {% else %}<i class="far fa-star"></i>{% endif %}
+                                    {% endfor %}
+                                </span>
+                                {{ "%.2f"|format(avg_rating) }}
+                            </td>
+                            <td><span class="badge bg-info">{{ rating_count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

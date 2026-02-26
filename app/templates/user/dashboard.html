@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FlickBase{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Your Dashboard</h1>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-star text-warning"></i></h3>
+                <h5>{{ rating_count }}</h5>
+                <p class="text-muted">Movies Rated</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-bookmark text-primary"></i></h3>
+                <h5>{{ watchlist_count }}</h5>
+                <p class="text-muted">In Watchlist</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-chart-bar text-success"></i></h3>
+                <h5>{{ "%.1f"|format(avg_rating) }}</h5>
+                <p class="text-muted">Average Rating</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-user text-info"></i></h3>
+                <h5>{{ current_user.username }}</h5>
+                <p class="text-muted">Member</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Ratings -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Ratings</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_ratings %}
+                <div class="list-group">
+                    {% for rating in recent_ratings %}
+                    <a href="{{ url_for('movie.movie_detail', movie_id=rating.movie.id) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ rating.movie.title }}</h6>
+                            <span class="rating-stars">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= rating.rating %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ rating.created_at.strftime('%B %d, %Y') }}</small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No ratings yet. <a href="{{ url_for('movie.movies') }}">Start rating movies!</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rating Distribution -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Rating Distribution</h5>
+            </div>
+            <div class="card-body">
+                {% for rating, count in rating_distribution.items() %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span><span class="rating-stars">{% for i in range(rating) %}<i class="fas fa-star"></i>{% endfor %}</span></span>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                    <div class="progress">
+                        {% set total = rating_count if rating_count > 0 else 1 %}
+                        {% set percentage = (count / total * 100) | int %}
+                        <div class="progress-bar" style="width: {{ percentage }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Highly Rated Movies -->
+{% if highly_rated %}
+<div class="row">
+    <div class="col-md-12">
+        <h4 class="mb-3"><i class="fas fa-heart"></i> Your Favorite Movies</h4>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+            {% for movie in highly_rated %}
+            <div class="col">
+                <div class="card movie-card">
+                    <div class="movie-poster">
+                        {% if movie.poster_url %}
+                            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                        {% else %}
+                            <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ movie.title }}</h5>
+                        <div class="rating-stars">
+                            {% set avg_rating = movie.get_average_rating_db() %}
+                            {% for i in range(1, 6) %}
+                                {% if i <= avg_rating %}<i class="fas fa-star"></i>
+                                {% elif i - avg_rating < 1 %}<i class="fas fa-star-half-alt"></i>
+                                {% else %}<i class="far fa-star"></i>{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="mb-3">Quick Actions</h5>
+                <a href="{{ url_for('movie.recommendations') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-lightbulb"></i> Get Recommendations
+                </a>
+                <a href="{{ url_for('movie.watchlist') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-bookmark"></i> View Watchlist
+                </a>
+                <a href="{{ url_for('movie.movies') }}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Browse Movies
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

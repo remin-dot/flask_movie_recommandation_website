@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: flask_movie_app
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: production
+      FLASK_APP: run.py
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-movie_db}
+    depends_on:
+      - db
+    volumes:
+      - ./instance:/app/instance
+    networks:
+      - movie_network
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    container_name: flask_movie_db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-movie_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - movie_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  movie_network:
+    driver: bridge
