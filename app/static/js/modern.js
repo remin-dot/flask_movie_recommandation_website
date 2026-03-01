@@ -38,10 +38,15 @@
 
 // Watchlist Functions
 function addToWatchlist(movieId) {
+    // Get CSRF token from the page
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                      document.querySelector('input[name="csrf_token"]')?.value;
+    
     fetch(`/add-to-watchlist/${movieId}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         }
     })
     .then(response => response.json())
@@ -63,10 +68,15 @@ function addToWatchlist(movieId) {
 function removeFromWatchlist(movieId) {
     if (!confirm('Remove from watchlist?')) return;
     
+    // Get CSRF token from the page
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                      document.querySelector('input[name="csrf_token"]')?.value;
+    
     fetch(`/remove-from-watchlist/${movieId}`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
         }
     })
     .then(response => response.json())
