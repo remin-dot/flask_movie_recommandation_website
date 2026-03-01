@@ -8,7 +8,7 @@ A full-stack web application for discovering, rating, and sharing movies with pe
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3+-purple.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-**Repository**: https://github.com/remin-dot/test.git
+**Repository**: https://github.com/remin-dot/flask_movie_recommandation_website.git
 
 ---
 
@@ -99,8 +99,8 @@ A full-stack web application for discovering, rating, and sharing movies with pe
 
 ### Step 1: Clone Repository
 ```bash
-git clone https://github.com/remin-dot/test.git
-cd test
+git clone https://github.com/remin-dot/flask_movie_recommandation_website.git
+cd flask_movie_recommandation_website
 ```
 
 ### Step 2: Create Virtual Environment
@@ -176,7 +176,7 @@ Change these in the database before production!
 
 ### Directory Structure
 ```
-test/
+flask_movie_recommandation_website/
 ├── app/                             # Main Flask package
 │   ├── __init__.py                 # App factory & initialization
 │   ├── models.py                   # Database models (User, Movie, Rating, etc.)
